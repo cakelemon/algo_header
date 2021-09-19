@@ -186,6 +186,73 @@ private:
 	}
 };
 
+// tree that supports LCA
+struct tree {
+	vector<vector<int>> _adj;
+	vector<vector<int>> _pa;
+	vector<int> _depth;
+	int _n;
+	bool _canLCA = false;
+
+public:
+	tree(int n) {
+		_n = n;
+		_adj = vector<vector<int>>(n + 1);
+	}
+
+	void connect(int a, int b) {
+		_adj[a].push_back(b);
+		_adj[b].push_back(a);
+	}
+
+	void init_lca(int root) {
+		_canLCA = true;
+		_depth = vector<int>(_n + 1);
+
+		int lg = 0;
+		while ((1 << lg) <= _n) lg++;
+		_pa = vector<vector<int>>(_n + 1, vector<int>(lg + 1));
+
+		dfs_lca(root, 0, 0);
+		for (int i = 1; i <= lg; i++) {
+			for (int node = 1; node <= _n; node++) {
+				_pa[node][i] = _pa[_pa[node][i - 1]][i - 1];
+			}
+		}
+	}
+
+	int LCA(int a, int b) {
+		assert(_canLCA);
+		if (_depth[a] > _depth[b]) swap(a, b); // depth[b] > depth[a]
+
+		for (int j = _pa[0].size() - 1; j >= 0; j--) {
+			if (_depth[b] - _depth[a] >= (1 << j)) b = _pa[b][j];
+		}
+
+		if (a == b) return a;
+		for (int j = _pa[0].size() - 1; j >= 0; j--) {
+			if (_pa[a][j] != _pa[b][j]) {
+				a = _pa[a][j];
+				b = _pa[b][j];
+			}
+		}
+		return _pa[a][0];
+	}
+
+private:
+	void dfs_lca(int here, int pa, int depth) {
+		_pa[here][0] = pa;
+		_depth[here] = depth;
+
+		for (int there : _adj[here]) {
+			if (there == pa) continue;
+
+			dfs_lca(there, here, depth + 1);
+		}
+	}
+};
+
+
 namespace atcoder {
 
 	// Implement (union by size) + (path compression)
